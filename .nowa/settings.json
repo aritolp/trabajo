@@ -1,0 +1,11 @@
+{
+    "version": "3.7.1",
+    "app": {
+        "name": "tvplus",
+        "bundleId": "com.example.tvplus"
+    },
+    "main": {},
+    "experimental": {
+        "load_packages": true
+    }
+}
