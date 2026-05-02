@@ -1,28 +1,26 @@
 import java.util.Properties
 import java.io.FileInputStream
 
-plugins {
-    id("com.android.application")
-    id("kotlin-android")
-    id("dev.flutter.flutter-gradle-plugin")
-    
-}
-
+// 1. Carga de propiedades al inicio
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
 android {
-    namespace = "com.example.tvplus"
+    namespace = "com.prueba.tvplus"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-        
     }
 
     kotlinOptions {
@@ -30,10 +28,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.tvplus"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdk = flutter.minSdkVersion
+        applicationId = "com.prueba.tvplus"
+        minSdk = 21 
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -41,31 +37,32 @@ android {
 
     signingConfigs {
         create("release") {
-            if (System.getenv("CI") != null) { // CI=true is exported by Codemagic
-                storeFile = file(System.getenv("CM_BUILD_DIR") + "/codemagic.keystore")
-                storePassword = System.getenv("CM_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("CM_KEY_ALIAS")
-                keyPassword = System.getenv("CM_KEY_PASSWORD")
-            } else {
-                keyAlias = keystoreProperties["keyAlias"] as String?
-                keyPassword = keystoreProperties["keyPassword"] as String?
-                storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
-                storePassword = keystoreProperties["storePassword"] as String?
+            keyAlias = keystoreProperties["keyAlias"] as? String
+            keyPassword = keystoreProperties["keyPassword"] as? String
+            storePassword = keystoreProperties["storePassword"] as? String
+            
+            val fileName = keystoreProperties["storeFile"] as? String
+            if (fileName != null) {
+                // EXPLICACIÓN: Como el .yml guarda el JKS en 'android/app/', 
+                // y este archivo Gradle está en 'android/app/', solo necesitamos el nombre.
+                storeFile = file(fileName) 
             }
         }
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+            isShrinkResources = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
 
 flutter {
     source = "../.."
-}
-
-dependencies {
-    
 }
