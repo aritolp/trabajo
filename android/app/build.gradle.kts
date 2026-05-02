@@ -1,13 +1,3 @@
-import java.util.Properties
-import java.io.FileInputStream
-
-// Carga de propiedades usando rootProject para asegurar la ruta
-val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("key.properties")
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-}
-
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -19,12 +9,12 @@ android {
     compileSdk = flutter.compileSdkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
     defaultConfig {
@@ -36,23 +26,22 @@ android {
     }
 
     signingConfigs {
+        // Usamos 'create' para asegurarnos de que la configuración exista
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as? String
-            keyPassword = keystoreProperties["keyPassword"] as? String
-            storePassword = keystoreProperties["storePassword"] as? String
-            
-            val fileName = keystoreProperties["storeFile"] as? String
-            if (fileName != null) {
-                // file(fileName) buscará relativo a este build.gradle
-                // como en el .yml pusimos "../", subirá a la carpeta /android/ correctamente
-                storeFile = file(fileName) 
+            if (System.getenv("CI") == "true") {
+                storeFile = file("upload-keystore.jks")
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
             }
         }
     }
 
     buildTypes {
         getByName("release") {
+            // Referenciamos la configuración que acabamos de crear arriba
             signingConfig = signingConfigs.getByName("release")
+            
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(
