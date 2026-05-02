@@ -1,7 +1,7 @@
 import java.util.Properties
 import java.io.FileInputStream
 
-// 1. Carga de propiedades al inicio
+// Carga de propiedades usando rootProject para asegurar la ruta
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
@@ -19,12 +19,12 @@ android {
     compileSdk = flutter.compileSdkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
@@ -43,8 +43,8 @@ android {
             
             val fileName = keystoreProperties["storeFile"] as? String
             if (fileName != null) {
-                // EXPLICACIÓN: Como el .yml guarda el JKS en 'android/app/', 
-                // y este archivo Gradle está en 'android/app/', solo necesitamos el nombre.
+                // file(fileName) buscará relativo a este build.gradle
+                // como en el .yml pusimos "../", subirá a la carpeta /android/ correctamente
                 storeFile = file(fileName) 
             }
         }
