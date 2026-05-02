@@ -154,7 +154,7 @@ class _HlsVideoPlayerState extends State<HlsVideoPlayer> {
       };
       final Uri uri = Uri.parse(widget.url);
       if (widget.referer != null) {
-        headers['Referer'] = widget.referer;
+        headers['Referer'] = widget.referer ?? '';
       }
       _videoPlayerController = VideoPlayerController.networkUrl(
         uri,
