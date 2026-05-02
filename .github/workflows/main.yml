@@ -1,48 +1,55 @@
-name: Flutter Build APK
+name: Flutter Build Release
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      # 1. Descargar el código del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Setup Java
+      # 2. Configurar Java (Necesario para Android)
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17' # Sincronizado con Gradle
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Setup Flutter
+      # 3. Configurar Flutter
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: false
 
+      # 4. Instalar dependencias de Flutter
       - name: Install dependencies
         run: flutter pub get
 
+      # 5. Decodificar el Keystore (Se guarda en android/app/ para que Gradle lo encuentre)
       - name: Decode Keystore
-        # Lo guardamos en la carpeta /android/
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/upload-keystore.jks
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
 
-      - name: Create key.properties
-        # Lo creamos en /android/. El path del storeFile apunta un nivel arriba del build.gradle
-        run: |
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" > android/key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/key.properties
-          echo "storeFile=../upload-keystore.jks" >> android/key.properties
-
-      - name: Build APK
+      # 6. Compilar AppBundle pasando los Secretos como Variables de Entorno
+      - name: Build Release Apk
         run: flutter build apk --release
+        env:
+          # Estas variables las leerá tu build.gradle mediante System.getenv()
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Upload Artifact
+      # 7. Subir el archivo final (.aab) como un artefacto descargable
+      - name: Upload Release Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: video-player-release-apk
+          path: build/app/outputs/apk/release/app-release.apk
